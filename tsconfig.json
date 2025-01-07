@@ -8,14 +8,29 @@
     "noEmitHelpers": true,
     "noEmitOnError": true,
     "jsx": "react",
-    "lib": ["ESNext", "dom"],
+    "lib": [
+      "ESNext",
+      "dom"
+    ],
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"],
-      "@/*": ["src/*"]
+      "~/*": [
+        "src/*"
+      ],
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["./src/**/*.tsx?"],
-  "files": ["./references.d.ts"],
-  "exclude": ["node_modules", "platforms"]
+  "include": [
+    "./src/**/*.tsx?"
+  ],
+  "files": [
+    "./references.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "platforms"
+  ],
+  "extends": "expo/tsconfig.base"
 }
