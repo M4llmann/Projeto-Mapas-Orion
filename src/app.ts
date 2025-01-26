@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as ReactNativeScript from 'react-nativescript';
+
 import { MainStack } from './components/MainStack';
 
 // In NativeScript, the app.ts file is the entry point to your application. You
