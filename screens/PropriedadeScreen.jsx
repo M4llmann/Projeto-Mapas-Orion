@@ -135,7 +135,6 @@ const PropriedadeScreen = () => {
           title={loading ? "Salvando..." : "Salvar Propriedade"}
           onPress={async () => {
             await handleSaveProperty();
-            navigation.navigate("Teste");
           }}
           disabled={loading}
         />
@@ -151,6 +150,7 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "70%", // Certifique-se de que o mapa ocupa espaço suficiente na tela
+    zIndex: 1,
   },
   formContainer: {
     padding: 20,

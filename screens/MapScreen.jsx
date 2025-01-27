@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Alert, StyleSheet } from "react-native";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
-import Map, { Marker } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps"; // Alterei para MapView
 import { TouchableOpacity, Text } from "react-native";
 import { getPropertyCoordinates } from "../utils/getPropertyCoordinates"; // Caminho do arquivo de função
 
 const MapScreen = () => {
   const navigation = useNavigation();
   const auth = getAuth();
+  const mapRef = useRef(null); // Referência para o MapView
+
   const [region, setRegion] = useState({
     latitude: -24.563907, // Coordenadas padrão
     longitude: -54.0645,
@@ -30,12 +32,20 @@ const MapScreen = () => {
             const { latitude, longitude } = coordenadas;
 
             // Atualiza a região do mapa e o marcador.
-            setRegion({
+            const newRegion = {
               latitude,
               longitude,
               latitudeDelta: 0.01, // Zoom ajustado para foco maior
               longitudeDelta: 0.01,
-            });
+            };
+            setRegion(newRegion); // Atualiza o estado da região
+
+            // Anima a transição para a nova região
+            if (mapRef.current) {
+              mapRef.current.animateToRegion(newRegion, 2000); // Animação de 1 segundo
+            }
+
+            // Atualiza o marcador com as coordenadas recebidas
             setSelectedCoordinate({ latitude, longitude });
           } else {
             console.log("Usuário não possui propriedades ou coordenadas.");
@@ -49,20 +59,25 @@ const MapScreen = () => {
       }
     });
 
-    return unsubscribe; // Remove o listener ao desmontar o componente.
-  }, []);
+    return unsubscribe;
+  }, [auth]); // Adicione 'auth' como dependência
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
+
+      setRegion(null);
+      setSelectedCoordinate(null); // Remove o marcador
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
   };
+  console.log("Coordenadas do marcador:", selectedCoordinate);
 
   return (
     <View style={styles.container}>
-      <Map
+      <MapView
+        ref={mapRef} // Adicionando o ref ao MapView
         style={styles.map}
         region={region}
         onRegionChangeComplete={(newRegion) => setRegion(newRegion)} // Mantém o controle da região ao mover o mapa
@@ -74,7 +89,7 @@ const MapScreen = () => {
             description="Primeira propriedade do usuário"
           />
         )}
-      </Map>
+      </MapView>
 
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.buttonText}>Logout</Text>
