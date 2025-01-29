@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Alert, StyleSheet } from "react-native";
+import { View, Alert, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps"; // Alterei para MapView
-import { TouchableOpacity, Text } from "react-native";
 import { getPropertyCoordinates } from "../utils/getPropertyCoordinates"; // Caminho do arquivo de função
 
 const MapScreen = () => {
@@ -25,6 +24,7 @@ const MapScreen = () => {
         console.log("Usuário autenticado:", user.uid);
 
         try {
+          // Aguarda a obtenção das coordenadas
           const coordenadas = await getPropertyCoordinates(user.uid);
           console.log("Coordenadas recebidas:", coordenadas);
 
@@ -38,11 +38,13 @@ const MapScreen = () => {
               latitudeDelta: 0.01, // Zoom ajustado para foco maior
               longitudeDelta: 0.01,
             };
-            setRegion(newRegion); // Atualiza o estado da região
+
+            // Atualiza a região após receber as coordenadas
+            setRegion(newRegion); // Não precisa de await aqui, pois o setState é síncrono
 
             // Anima a transição para a nova região
             if (mapRef.current) {
-              mapRef.current.animateToRegion(newRegion, 2000); // Animação de 1 segundo
+              mapRef.current.animateToRegion(newRegion, 2000); // Animação de 2 segundos
             }
 
             // Atualiza o marcador com as coordenadas recebidas
@@ -64,15 +66,15 @@ const MapScreen = () => {
 
   const handleLogout = async () => {
     try {
+      // Aguarda a desconexão do usuário
       await signOut(auth);
 
-      setRegion(null);
+      setRegion(null); // Limpa a região do mapa
       setSelectedCoordinate(null); // Remove o marcador
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
   };
-  console.log("Coordenadas do marcador:", selectedCoordinate);
 
   return (
     <View style={styles.container}>
@@ -81,6 +83,7 @@ const MapScreen = () => {
         style={styles.map}
         region={region}
         onRegionChangeComplete={(newRegion) => setRegion(newRegion)} // Mantém o controle da região ao mover o mapa
+        mapType="satellite"
       >
         {selectedCoordinate && (
           <Marker

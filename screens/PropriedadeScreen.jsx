@@ -17,6 +17,7 @@ const PropriedadeScreen = () => {
     latitudeDelta: 0.001,
     longitudeDelta: 0.001,
   });
+  const [selectingLocation, setSelectingLocation] = useState(false); // Controle de seleção de local
 
   const navigation = useNavigation();
 
@@ -52,8 +53,9 @@ const PropriedadeScreen = () => {
   );
 
   const handleMapPress = (e) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
+    if (!selectingLocation) return; // Só permite selecionar quando a seleção estiver ativada
 
+    const { latitude, longitude } = e.nativeEvent.coordinate;
     console.log("Coordenada selecionada: ", { latitude, longitude });
 
     setSelectedCoordinate({
@@ -113,7 +115,7 @@ const PropriedadeScreen = () => {
         style={styles.map}
         initialRegion={region}
         onPress={handleMapPress}
-        pointerEvents="auto" // Garante que o mapa aceite toques
+        pointerEvents={selectingLocation ? "auto" : "none"} // Permite interação somente quando selecionando local
       >
         {selectedCoordinate && (
           <Marker
@@ -130,6 +132,10 @@ const PropriedadeScreen = () => {
           placeholder="Nome da Propriedade"
           value={propertyName}
           onChangeText={setPropertyName}
+        />
+        <Button
+          title={selectingLocation ? "Cancelar Seleção" : "Selecionar Local"}
+          onPress={() => setSelectingLocation((prev) => !prev)} // Alterna entre ativar/desativar a seleção
         />
         <Button
           title={loading ? "Salvando..." : "Salvar Propriedade"}
