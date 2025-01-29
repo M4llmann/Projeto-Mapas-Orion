@@ -72,6 +72,7 @@ const MapScreen = () => {
       await signOut(auth);
       setRegion(null); // Limpa a região do mapa
       setSelectedCoordinate(null); // Remove o marcador
+      setIsDrawing(null);
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
