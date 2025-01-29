@@ -1,31 +1,27 @@
 import React, { useState, useCallback, useRef } from "react";
-import { 
-  View, 
-  Button, 
-  Alert, 
-  StyleSheet, 
-  TextInput, 
-  Text 
+import {
+  View,
+  Button,
+  Alert,
+  StyleSheet,
+  TextInput,
+  Text,
+  FlatList,
+  TouchableOpacity,
 } from "react-native";
 import MapView, { Marker, Polygon } from "react-native-maps";
 import { useFocusEffect } from "@react-navigation/native";
-
 import { getAuth, signOut } from "firebase/auth";
-import { db } from "../firebase"; // Sua config Firebase
-import { getPropertyCoordinates } from "../utils/getPropertyCoordinates"; // Função auxiliar
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where 
-} from "firebase/firestore";
+import { db } from "../firebase";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 
 const TesteScreen = () => {
   const auth = getAuth();
   const mapRef = useRef(null);
 
   const [user, setUser] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState(null);
   const [region, setRegion] = useState({
     latitude: -24.563907,
     longitude: -54.0645,
@@ -33,35 +29,30 @@ const TesteScreen = () => {
     longitudeDelta: 0.0421,
   });
 
-  // Estados para desenho
   const [isDrawing, setIsDrawing] = useState(false);
   const [points, setPoints] = useState([]);
-
-  // Estados para finalização e descrição
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [description, setDescription] = useState("");
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
 
-  /**
-   * Busca dados do usuário e, caso haja coordenadas salvas, 
-   * centraliza o mapa na propriedade correspondente
-   */
   const fetchUserData = useCallback(async () => {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
         setUser(currentUser);
 
-        // Exemplo: recupera coordenadas salvas para a propriedade
-        const coordenadas = await getPropertyCoordinates(currentUser.uid);
-        if (coordenadas) {
-          const { latitude, longitude } = coordenadas;
-          setRegion((prevRegion) => ({
-            ...prevRegion,
-            latitude,
-            longitude,
+        const propriedadesRef = collection(db, "Propriedades");
+        const q = query(propriedadesRef, where("id", "==", currentUser.uid));
+        const propriedadeSnapshot = await getDocs(q);
+
+        if (!propriedadeSnapshot.empty) {
+          const propriedades = propriedadeSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
           }));
+          setProperties(propriedades);
         } else {
-          console.log("Usuário não possui propriedades ou coordenadas salvas.");
+          console.log("Nenhuma propriedade encontrada para este usuário.");
         }
       } else {
         Alert.alert("Erro", "Usuário não autenticado");
@@ -78,9 +69,20 @@ const TesteScreen = () => {
     }, [fetchUserData])
   );
 
-  /**
-   * Evento ao clicar no mapa: só adiciona ponto se estiver desenhando
-   */
+  const handleSelectProperty = (property) => {
+    setSelectedProperty(property);
+    setRegion({
+      latitude: property.coordenadas.latitude,
+      longitude: property.coordenadas.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+    setPoints([]); // Reseta os pontos ao selecionar uma nova propriedade
+    setDescription(""); // Reseta a descrição
+    setIsDrawing(false); // Desativa o desenho
+    setIsFinalizing(false); // Desativa a finalização
+  };
+
   const handleMapPress = (e) => {
     if (isDrawing) {
       const { latitude, longitude } = e.nativeEvent.coordinate;
@@ -88,20 +90,13 @@ const TesteScreen = () => {
     }
   };
 
-  /**
-   * Desfazer último ponto (se existir)
-   */
   const handleUndoLastPoint = () => {
     if (points.length > 0) {
       setPoints((prevPoints) => prevPoints.slice(0, -1));
     }
   };
 
-  /**
-   * Iniciar ou interromper o modo de desenho
-   */
   const toggleDrawing = () => {
-    // Se já estiver desenhando e tiver pontos, perguntar se quer realmente cancelar
     if (isDrawing && points.length > 0) {
       Alert.alert(
         "Cancelar Desenho",
@@ -111,7 +106,7 @@ const TesteScreen = () => {
             text: "Sim",
             onPress: () => {
               setIsDrawing(false);
-              setPoints([]);
+              setPoints([]); // Limpa os pontos ao cancelar
             },
           },
           {
@@ -120,16 +115,11 @@ const TesteScreen = () => {
         ]
       );
     } else {
-      // Se não estiver desenhando, começar o desenho
       setIsDrawing(!isDrawing);
-      setPoints([]);
+      setPoints([]); // Reseta os pontos ao iniciar novo desenho
     }
   };
 
-  /**
-   * Finalizar desenho (ao clicar em algum botão),
-   * aqui apenas abrimos a tela/prompt para descrição
-   */
   const handleFinalizeDrawing = () => {
     if (points.length < 3) {
       Alert.alert("Erro", "O polígono precisa ter pelo menos 3 pontos!");
@@ -138,55 +128,42 @@ const TesteScreen = () => {
     setIsFinalizing(true);
   };
 
-  /**
-   * Salvar desenho no Firestore
-   */
   const handleSaveDrawing = async () => {
-    if (!description.trim()) {
-      Alert.alert("Erro", "É necessário inserir uma descrição!");
+    if (points.length < 3 || !description.trim()) {
+      Alert.alert(
+        "Erro",
+        "Desenho precisa de pelo menos 3 pontos e uma descrição."
+      );
       return;
     }
 
     try {
-      // Buscar a propriedade do usuário no Firestore
       const propriedadesRef = collection(db, "Propriedades");
       const q = query(propriedadesRef, where("id", "==", user.uid));
       const propriedadeSnapshot = await getDocs(q);
 
       if (!propriedadeSnapshot.empty) {
-        // id do doc da propriedade
-        const propriedadeDocId = propriedadeSnapshot.docs[0].id;
-        // Subcoleção Mapas
-        const mapasRef = collection(db, `Propriedades/${propriedadeDocId}/Mapas`);
+        const propriedadeId = propriedadeSnapshot.docs[0].id;
+        const mapasRef = collection(db, `Propriedades/${propriedadeId}/Mapas`);
 
-        // Montar o objeto no formato GeoJSON
-        // Note que GeoJSON usa [longitude, latitude]
-        const geoJSON = {
-          type: "Feature",
-          properties: {
-            descricao: description.trim(),
-            dataCriacao: new Date().toISOString(),
-            userId: user.uid,
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              points.map((p) => [p.longitude, p.latitude]),
-            ],
-          },
-        };
-
-        // Adiciona o objeto no Firestore
-        await addDoc(mapasRef, geoJSON);
+        await addDoc(mapasRef, {
+          descricao: description.trim(),
+          pontos: points,
+          dataCriacao: new Date().toISOString(),
+          userId: user.uid,
+        });
 
         Alert.alert("Sucesso", "Desenho salvo com sucesso!");
-        // Limpar estados
-        setPoints([]);
-        setDescription("");
-        setIsDrawing(false);
-        setIsFinalizing(false);
+
+        setPoints([]); // Limpa os pontos após salvar
+        setDescription(""); // Limpa a descrição
+        setIsDrawing(false); // Desativa o modo de desenho
+        setIsFinalizing(false); // Desativa a finalização
       } else {
-        Alert.alert("Erro", "Nenhuma propriedade encontrada para este usuário.");
+        Alert.alert(
+          "Erro",
+          "Nenhuma propriedade encontrada para este usuário."
+        );
       }
     } catch (error) {
       console.error("Erro ao salvar desenho:", error);
@@ -194,9 +171,6 @@ const TesteScreen = () => {
     }
   };
 
-  /**
-   * Fazer logout do Firebase
-   */
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -205,19 +179,31 @@ const TesteScreen = () => {
     }
   };
 
-  /**
-   * Fechamos o polígono visualmente repetindo o primeiro ponto no final
-   * para renderizar no mapa (apenas visual, não altera o array original).
-   */
   const closedPoints = points.length > 2 ? [...points, points[0]] : points;
 
   return (
     <View style={styles.container}>
+      <FlatList
+        data={properties}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleSelectProperty(item)}>
+            <Text style={styles.propertyItem}>
+              {item.nome} ({item.coordenadas.latitude.toFixed(4)},{" "}
+              {item.coordenadas.longitude.toFixed(4)})
+            </Text>
+          </TouchableOpacity>
+        )}
+        horizontal
+        style={styles.propertyList}
+      />
+
       <MapView
         ref={mapRef}
         style={styles.map}
         region={region}
         onPress={handleMapPress}
+        onRegionChangeComplete={(region) => setRegion(region)}
       >
         {closedPoints.length >= 2 && (
           <Polygon
@@ -229,7 +215,7 @@ const TesteScreen = () => {
         )}
         {points.map((point, index) => (
           <Marker
-            key={index}
+            key={`${point.latitude}-${point.longitude}`}
             coordinate={point}
             pinColor="blue"
             title={`Ponto ${index + 1}`}
@@ -237,54 +223,53 @@ const TesteScreen = () => {
         ))}
       </MapView>
 
-      {/* Botões de controle do desenho */}
-      <View style={styles.controlsContainer}>
-        <Button
-          title={isDrawing ? "Cancelar Desenho" : "Iniciar Desenho"}
-          onPress={toggleDrawing}
-        />
+      <TouchableOpacity
+        style={styles.menuButton}
+        onPress={() => setIsDropdownVisible(!isDropdownVisible)}
+      >
+        <Text style={styles.menuButtonText}>☰</Text>
+      </TouchableOpacity>
 
-        {/* Só exibe o botão de desfazer se estivermos desenhando e tivermos pontos */}
-        {isDrawing && points.length > 0 && (
-          <Button title="Desfazer Último Ponto" onPress={handleUndoLastPoint} />
-        )}
-
-        {/* Finalizar desenho (exige ao menos 3 pontos) */}
-        {isDrawing && points.length >= 3 && (
+      {isDropdownVisible && (
+        <View style={styles.dropdownMenu}>
           <Button
-            title="Finalizar Desenho"
-            onPress={handleFinalizeDrawing}
+            title={isDrawing ? "Cancelar Desenho" : "Iniciar Desenho"}
+            onPress={toggleDrawing}
           />
-        )}
-
-        {/* Modal ou input simples para descrição */}
-        {isFinalizing && (
-          <View style={{ marginTop: 10 }}>
-            <Text>Descrição do Desenho:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite a descrição..."
-              value={description}
-              onChangeText={setDescription}
-            />
-            <Button title="Salvar" onPress={handleSaveDrawing} />
+          {isDrawing && points.length > 0 && (
             <Button
-              title="Cancelar"
-              onPress={() => {
-                setIsFinalizing(false);
-                setDescription("");
-              }}
+              title="Desfazer Último Ponto"
+              onPress={handleUndoLastPoint}
             />
-          </View>
-        )}
-
-        <Button title="Logout" onPress={handleLogout} />
-      </View>
+          )}
+          {isDrawing && points.length >= 3 && (
+            <Button title="Finalizar Desenho" onPress={handleFinalizeDrawing} />
+          )}
+          {isFinalizing && (
+            <View style={{ marginTop: 10 }}>
+              <Text>Descrição do Desenho:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Digite a descrição..."
+                value={description}
+                onChangeText={setDescription}
+              />
+              <Button title="Salvar" onPress={handleSaveDrawing} />
+              <Button
+                title="Cancelar"
+                onPress={() => {
+                  setIsFinalizing(false);
+                  setDescription("");
+                }}
+              />
+            </View>
+          )}
+          <Button title="Logout" onPress={handleLogout} />
+        </View>
+      )}
     </View>
   );
 };
-
-export default TesteScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -292,13 +277,41 @@ const styles = StyleSheet.create({
   },
   map: {
     width: "100%",
-    height: "70%",
+    height: "60%",
   },
-  controlsContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginTop: 10,
+  propertyList: {
+    height: 50,
+    backgroundColor: "#f7f7f7",
+    padding: 5,
+  },
+  propertyItem: {
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 4,
+    margin: 5,
+    textAlign: "center",
+  },
+  menuButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    backgroundColor: "#3498db",
+    padding: 10,
+    borderRadius: 30,
+  },
+  menuButtonText: {
+    color: "#fff",
+    fontSize: 20,
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 70,
+    right: 20,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 5,
+    elevation: 5,
+    width: 200,
   },
   input: {
     width: 250,
@@ -309,3 +322,5 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
 });
+
+export default TesteScreen;

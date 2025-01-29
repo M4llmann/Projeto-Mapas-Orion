@@ -17,7 +17,6 @@ const PropriedadeScreen = () => {
     latitudeDelta: 0.001,
     longitudeDelta: 0.001,
   });
-  const [selectingLocation, setSelectingLocation] = useState(false); // Controle de seleção de local
 
   const navigation = useNavigation();
 
@@ -53,8 +52,6 @@ const PropriedadeScreen = () => {
   );
 
   const handleMapPress = (e) => {
-    if (!selectingLocation) return; // Só permite selecionar quando a seleção estiver ativada
-
     const { latitude, longitude } = e.nativeEvent.coordinate;
     console.log("Coordenada selecionada: ", { latitude, longitude });
 
@@ -63,12 +60,15 @@ const PropriedadeScreen = () => {
       longitude,
     });
 
-    setRegion({
+    // Atualiza a região de forma animada sem forçar uma nova renderização
+    const newRegion = {
       latitude,
       longitude,
       latitudeDelta: 0.01,
       longitudeDelta: 0.01,
-    });
+    };
+
+    setRegion(newRegion);
   };
 
   const handleSaveProperty = async () => {
@@ -113,9 +113,13 @@ const PropriedadeScreen = () => {
     <View style={styles.container}>
       <MapView
         style={styles.map}
-        initialRegion={region}
+        region={region}
         onPress={handleMapPress}
-        pointerEvents={selectingLocation ? "auto" : "none"} // Permite interação somente quando selecionando local
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
+        onRegionChangeComplete={(newRegion) => setRegion(newRegion)} // Atualiza a região quando o usuário interage
       >
         {selectedCoordinate && (
           <Marker
@@ -132,10 +136,6 @@ const PropriedadeScreen = () => {
           placeholder="Nome da Propriedade"
           value={propertyName}
           onChangeText={setPropertyName}
-        />
-        <Button
-          title={selectingLocation ? "Cancelar Seleção" : "Selecionar Local"}
-          onPress={() => setSelectingLocation((prev) => !prev)} // Alterna entre ativar/desativar a seleção
         />
         <Button
           title={loading ? "Salvando..." : "Salvar Propriedade"}
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: "100%",
-    height: "70%", // Certifique-se de que o mapa ocupa espaço suficiente na tela
+    height: "80%", // Certifique-se de que o mapa ocupa espaço suficiente na tela
     zIndex: 1,
   },
   formContainer: {
