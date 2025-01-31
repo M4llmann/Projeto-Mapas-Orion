@@ -30,8 +30,8 @@ export default function App() {
     <Tab.Navigator>
       <Tab.Screen name="Mapa" component={MapScreen} />
       <Tab.Screen name="Info" component={InfoScreen} />
-      <Tab.Screen name="Propriedade" component={PropriedadeScreen} />
-      <Tab.Screen name="Teste" component={TesteScreen} />
+      {/* <Tab.Screen name="Propriedade" component={PropriedadeScreen} />
+      <Tab.Screen name="Teste" component={TesteScreen} /> */}
     </Tab.Navigator>
   );
 

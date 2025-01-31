@@ -1,56 +1,55 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Alert, StyleSheet, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  TextInput,
+  Button,
+} from "react-native";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
-import MapView, { Marker } from "react-native-maps"; // Alterei para MapView
-import { getPropertyCoordinates } from "../utils/getPropertyCoordinates"; // Caminho do arquivo de função
+import MapView, { Marker } from "react-native-maps";
+import { db } from "../firebase";
+import { collection, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
+import { getPropertyCoordinates } from "../utils/getPropertyCoordinates";
 
 const MapScreen = () => {
-  const navigation = useNavigation(); // Hook para navegação
+  const navigation = useNavigation();
   const auth = getAuth();
-  const mapRef = useRef(null); // Referência para o MapView
+  const mapRef = useRef(null);
 
   const [region, setRegion] = useState({
-    latitude: -24.563907, // Coordenadas padrão
+    latitude: -24.563907,
     longitude: -54.0645,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
-  const [selectedCoordinate, setSelectedCoordinate] = useState(null); // Para definir o marcador no mapa
+  const [selectedCoordinate, setSelectedCoordinate] = useState(null);
+  const [propertyName, setPropertyName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log("Usuário autenticado:", user.uid);
-
+        setUser(user);
         try {
-          // Aguarda a obtenção das coordenadas
           const coordenadas = await getPropertyCoordinates(user.uid);
-          console.log("Coordenadas recebidas:", coordenadas);
-
           if (coordenadas) {
             const { latitude, longitude } = coordenadas;
-
-            // Atualiza a região do mapa e o marcador.
             const newRegion = {
               latitude,
               longitude,
-              latitudeDelta: 0.01, // Zoom ajustado para foco maior
+              latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             };
-
-            // Atualiza a região após receber as coordenadas
-            setRegion(newRegion); // Não precisa de await aqui, pois o setState é síncrono
-
-            // Anima a transição para a nova região
+            setRegion(newRegion);
             if (mapRef.current) {
-              mapRef.current.animateToRegion(newRegion, 2000); // Animação de 2 segundos
+              mapRef.current.animateToRegion(newRegion, 2000);
             }
-
-            // Atualiza o marcador com as coordenadas recebidas
             setSelectedCoordinate({ latitude, longitude });
-          } else {
-            console.log("Usuário não possui propriedades ou coordenadas.");
           }
         } catch (error) {
           console.error("Erro ao buscar coordenadas:", error);
@@ -62,53 +61,112 @@ const MapScreen = () => {
     });
 
     return unsubscribe;
-  }, [auth]); // Adicione 'auth' como dependência
+  }, [auth]);
 
   const handleLogout = async () => {
     try {
-      // Aguarda a desconexão do usuário
       await signOut(auth);
-
-      setRegion(null); // Limpa a região do mapa
-      setSelectedCoordinate(null); // Remove o marcador
+      setRegion({
+        latitude: -24.563907,
+        longitude: -54.0645,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+      setSelectedCoordinate(null);
     } catch (error) {
-      Alert.alert("Erro", error.message);
+      Alert.alert("Erro", "Erro ao realizar logout: " + error.message);
     }
   };
 
-  // Função para navegar para a tela de propriedades
-  const handleNavigateToPropriedade = () => {
-    navigation.navigate("Propriedade"); // Navega para a tela 'Propriedade'
+  const handleMapPress = (e) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setSelectedCoordinate({ latitude, longitude });
+
+    const newRegion = {
+      latitude,
+      longitude,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    };
+
+    setRegion(newRegion);
+  };
+
+  const handleSaveProperty = async () => {
+    if (!propertyName.trim()) {
+      Alert.alert("Erro", "Por favor, insira o nome da propriedade.");
+      return;
+    }
+    if (!selectedCoordinate) {
+      Alert.alert("Erro", "Por favor, selecione uma coordenada no mapa.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const novaPropriedadeRef = await addDoc(collection(db, "Propriedades"), {
+        nome: propertyName.trim(),
+        coordenadas: selectedCoordinate,
+        id: user.uid,
+        dataCriacao: new Date(),
+      });
+
+      const clienteDoc = await getDoc(doc(db, "Clientes", user.uid));
+      const clienteData = clienteDoc.data();
+      const propriedadesRefs = clienteData.Propriedades || [];
+      await updateDoc(clienteDoc.ref, {
+        Propriedades: [...propriedadesRefs, novaPropriedadeRef],
+      });
+
+      Alert.alert("Sucesso", "Propriedade cadastrada com sucesso!");
+      setPropertyName("");
+      setSelectedCoordinate(null);
+    } catch (error) {
+      console.error("Erro ao salvar propriedade:", error);
+      Alert.alert("Erro", "Erro ao salvar propriedade: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <MapView
-        ref={mapRef} // Adicionando o ref ao MapView
+        ref={mapRef}
         style={styles.map}
         region={region}
-        onRegionChangeComplete={(newRegion) => setRegion(newRegion)} // Mantém o controle da região ao mover o mapa
-        mapType="satellite"
+        onPress={handleMapPress}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
+        onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
       >
         {selectedCoordinate && (
           <Marker
-            coordinate={selectedCoordinate} // Mostra o marcador nas coordenadas definidas
-            title="Propriedade"
-            description="Primeira propriedade do usuário"
+            coordinate={selectedCoordinate}
+            title="Propriedade Selecionada"
+            description={propertyName || "Nome da propriedade"}
           />
         )}
       </MapView>
 
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nome da Propriedade"
+          value={propertyName}
+          onChangeText={setPropertyName}
+        />
+        <Button
+          title={loading ? "Salvando..." : "Salvar Propriedade"}
+          onPress={handleSaveProperty}
+          disabled={loading}
+        />
+      </View>
+
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-
-      {/* Botão para navegar para a tela de Propriedade */}
-      <TouchableOpacity
-        onPress={handleNavigateToPropriedade}
-        style={styles.navButton}
-      >
-        <Text style={styles.buttonText}>Ir para Propriedade</Text>
       </TouchableOpacity>
     </View>
   );
@@ -117,12 +175,22 @@ const MapScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
   },
   map: {
     width: "100%",
-    height: "80%", // Ajuste a altura do mapa
+    height: "70%",
+    zIndex: 1,
+  },
+  formContainer: {
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
   logoutButton: {
     width: "100%",
@@ -131,15 +199,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 5,
-  },
-  navButton: {
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#28a745", // Cor do botão verde para destacar
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 5,
-    marginTop: 10, // Adicionando um espaçamento entre os botões
   },
   buttonText: {
     color: "#fff",
