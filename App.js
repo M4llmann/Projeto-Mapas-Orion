@@ -4,12 +4,10 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
-import MapScreen from "./screens/MapScreen";
-import InfoScreen from "./screens/InfoScreen";
-import LoginScreen from "./screens/LoginScreen";
-import RegisterScreen from "./screens/RegisterScreen";
-import PropriedadeScreen from "./screens/PropriedadeScreen";
-import TesteScreen from "./screens/TesteScreen";
+import MapScreen from "./src/screens/MapScreen";
+import InfoScreen from "./src/screens/InfoScreen";
+import LoginScreen from "./src/screens/LoginScreen";
+import RegisterScreen from "./src/screens/RegisterScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,8 +28,6 @@ export default function App() {
     <Tab.Navigator>
       <Tab.Screen name="Mapa" component={MapScreen} />
       <Tab.Screen name="Info" component={InfoScreen} />
-      {/* <Tab.Screen name="Propriedade" component={PropriedadeScreen} />
-      <Tab.Screen name="Teste" component={TesteScreen} /> */}
     </Tab.Navigator>
   );
 

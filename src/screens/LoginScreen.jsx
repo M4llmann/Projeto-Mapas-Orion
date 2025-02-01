@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
-import { auth } from "../firebase";
+import { auth } from "../../firebase";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Image source={require("../assets/logo.png")} style={styles.logo} />
+      <Image source={require("../../assets/logo.png")} style={styles.logo} />
       <Text style={styles.title}>Login</Text>
       <TextInput
         style={styles.input}

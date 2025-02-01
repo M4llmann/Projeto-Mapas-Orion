@@ -9,9 +9,9 @@ import {
   ScrollView,
 } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase"; // Supondo que o Firebase já foi configurado
+import { auth } from "../../firebase"; // Supondo que o Firebase já foi configurado
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 
 export default function RegisterScreen({ navigation }) {
   const [nome, setNome] = useState("");
