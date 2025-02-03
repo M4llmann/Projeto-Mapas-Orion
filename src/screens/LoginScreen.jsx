@@ -9,9 +9,13 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth"; // Importe sendPasswordResetEmail
 import { useNavigation } from "@react-navigation/native";
-import { auth } from "../../firebase";
+import { auth } from "../../firebase"; // Supondo que você já tenha configurado o Firebase corretamente
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -25,6 +29,22 @@ const LoginScreen = () => {
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
+  };
+
+  const recoverPassword = () => {
+    if (!email) {
+      Alert.alert("Erro", "Por favor, insira seu email.");
+      return;
+    }
+
+    // Usando a função correta de sendPasswordResetEmail
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        alert("Email enviado com sucesso!");
+      })
+      .catch((error) => {
+        alert("Erro ao enviar email: " + error.message);
+      });
   };
 
   return (
@@ -44,12 +64,22 @@ const LoginScreen = () => {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Login" onPress={handleLogin} />
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={styles.registerLink}>
-          Não tem uma conta? Cadastre-se aqui.
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <Button title="Entrar" onPress={handleLogin} />
+      </View>
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Cadastre-se aqui."
+          onPress={() => navigation.navigate("Register")}
+          color="#ADc8E6"
+        />
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+          <Text style={styles.registerLink}>Recuperar Senha</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -60,10 +90,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     backgroundColor: "#f9f9f1",
+    marginTop: "40%",
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 300,
+    height: 300,
     resizeMode: "contain",
     alignSelf: "center",
     marginBottom: 20,
@@ -78,14 +109,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: "#ccc",
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 20,
     padding: 8,
     borderRadius: 5,
+  },
+  buttonContainer: {
+    marginTop: 10,
   },
   registerLink: {
     color: "blue",
     marginTop: 16,
-    textAlign: "center",
+    textAlign: "center", // Alinhando o texto à esquerda
     textDecorationLine: "underline",
     fontSize: 16,
   },

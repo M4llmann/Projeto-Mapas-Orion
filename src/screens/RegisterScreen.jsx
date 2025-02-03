@@ -1,3 +1,4 @@
+// src/screens/RegisterScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -7,11 +8,13 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase"; // Supondo que o Firebase já foi configurado
+import { auth } from "../../firebase"; // Certifique-se que o Firebase foi configurado
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import axios from "axios";
 
 export default function RegisterScreen({ navigation }) {
   const [nome, setNome] = useState("");
@@ -19,6 +22,11 @@ export default function RegisterScreen({ navigation }) {
   const [senha, setSenha] = useState("");
   const [cpf, setCpf] = useState("");
   const [telefone, setTelefone] = useState("");
+
+  // Estado para CEP
+  const [cep, setCep] = useState("");
+
+  // Estado para endereço
   const [endereco, setEndereco] = useState({
     rua: "",
     numero: "",
@@ -27,6 +35,7 @@ export default function RegisterScreen({ navigation }) {
     pais: "",
   });
 
+  // Função para cadastrar o usuário e armazenar os dados no Firestore
   const handleCadastro = async () => {
     if (
       !nome ||
@@ -63,9 +72,38 @@ export default function RegisterScreen({ navigation }) {
       });
 
       Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      navigation.navigate("Login"); // Redireciona para outra tela
+      navigation.navigate("Login"); // Redireciona para a tela de Login (ou outra)
     } catch (error) {
       Alert.alert("Erro", `Erro ao cadastrar: ${error.message}`);
+    }
+  };
+
+  // Função para buscar endereço via CEP usando a API do ViaCEP
+  const buscarEnderecoPorCEP = async (cepDigitado) => {
+    // Remove caracteres não numéricos
+    const cepLimpo = cepDigitado.replace(/\D/g, "");
+    if (cepLimpo.length === 8) {
+      try {
+        const response = await axios.get(
+          `https://viacep.com.br/ws/${cepLimpo}/json/`
+        );
+        if (!response.data.erro) {
+          // Atualiza os campos do endereço com os dados retornados
+          setEndereco((prevEndereco) => ({
+            ...prevEndereco,
+            rua: response.data.logradouro || "",
+            cidade: response.data.localidade || "",
+            estado: response.data.uf || "",
+            pais: "Brasil", // Define um valor padrão para o país
+          }));
+        } else {
+          Alert.alert("Erro", "CEP não encontrado");
+        }
+      } catch (error) {
+        Alert.alert("Erro", "Não foi possível buscar o endereço");
+      }
+    } else {
+      Alert.alert("Erro", "CEP deve conter 8 dígitos");
     }
   };
 
@@ -113,6 +151,23 @@ export default function RegisterScreen({ navigation }) {
       />
 
       <Text style={styles.sectionTitle}>Endereço</Text>
+      <View style={styles.cepContainer}>
+        <TextInput
+          style={styles.cepInput}
+          placeholder="CEP"
+          value={cep}
+          onChangeText={setCep}
+          keyboardType="numeric"
+          maxLength={9} // Ex: 12345-678
+        />
+
+        <TouchableOpacity
+          style={styles.buscarCepButton}
+          onPress={() => buscarEnderecoPorCEP(cep)}
+        >
+          <Text style={styles.buscarCepText}>Buscar CEP</Text>
+        </TouchableOpacity>
+      </View>
       <TextInput
         style={styles.input}
         placeholder="Rua"
@@ -152,6 +207,7 @@ export default function RegisterScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 30,
     flexGrow: 1,
     padding: 20,
     backgroundColor: "#f9f9f9",
@@ -175,5 +231,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
+  },
+  cepContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  cepInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    marginRight: 10,
+  },
+  buscarCepButton: {
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 5,
+  },
+  buscarCepText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
