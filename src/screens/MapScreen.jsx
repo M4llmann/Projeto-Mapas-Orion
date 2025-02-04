@@ -39,10 +39,10 @@ const MapScreen = () => {
 
   // Estados do mapa e usuário
   const [region, setRegion] = useState({
-    latitude: -24.563907,
-    longitude: -54.0645,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+    latitude: -24.56387409974605,
+    longitude: -54.06450295277613,
+    latitudeDelta: 50,
+    longitudeDelta: 50,
   });
   const [user, setUser] = useState(null);
 
@@ -247,6 +247,7 @@ const MapScreen = () => {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
+        mapType="satellite"
         style={styles.map}
         region={region}
         onPress={handleMapPress}

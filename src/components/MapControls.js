@@ -9,14 +9,11 @@ const MapControls = ({ onPropertyPress, onMapPress, onLogoutPress }) => {
       <TouchableOpacity style={styles.icon} onPress={onPropertyPress}>
         <FontAwesome5 name="home" size={24} color="white" />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.icon, { top: 100 }]}
-        onPress={onMapPress}
-      >
+      <TouchableOpacity style={[styles.icon, { top: 80 }]} onPress={onMapPress}>
         <FontAwesome5 name="map" size={24} color="white" />
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.icon, { top: 160 }]}
+        style={[styles.icon, { top: 140 }]}
         onPress={onLogoutPress}
       >
         <FontAwesome5 name="sign-out-alt" size={24} color="white" />
@@ -28,7 +25,7 @@ const MapControls = ({ onPropertyPress, onMapPress, onLogoutPress }) => {
 const styles = StyleSheet.create({
   icon: {
     position: "absolute",
-    top: 40,
+    top: 20,
     right: 20,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
     padding: 10,
