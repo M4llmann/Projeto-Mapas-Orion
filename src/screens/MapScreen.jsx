@@ -23,6 +23,7 @@ import {
   updateDoc,
   doc,
   getDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { db } from "../../firebase";
@@ -128,7 +129,8 @@ const MapScreen = () => {
         nome: propertyName.trim(),
         coordenadas: selectedCoordinate,
         dataCriacao: new Date(),
-        proprietario: user.displayName,
+        proprietario: user.email,
+        revisada: false,
       });
 
       // Atualiza o documento do cliente
@@ -146,6 +148,48 @@ const MapScreen = () => {
       await fetchUserProperties(user.uid);
     } catch (error) {
       Alert.alert("Erro", error.message);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId) => {
+    try {
+      // Exibe confirmação antes de deletar
+      Alert.alert(
+        "Confirmar exclusão",
+        "Tem certeza que deseja excluir esta propriedade?",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "Sim, excluir",
+            onPress: async () => {
+              // Referência do documento no Firestore
+              const propertyRef = doc(db, "Propriedades", propertyId);
+
+              // Deleta a propriedade
+              await deleteDoc(propertyRef);
+
+              // Atualiza a lista local de propriedades
+              setProperties((prevProperties) =>
+                prevProperties.filter((prop) => prop.id !== propertyId)
+              );
+
+              // Se a propriedade deletada for a selecionada, limpa a seleção
+              if (selectedProperty?.id === propertyId) {
+                setSelectedProperty(null);
+              }
+
+              Alert.alert("Sucesso", "Propriedade excluída com sucesso!");
+            },
+            style: "destructive",
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível excluir a propriedade");
+      console.error("Erro ao deletar propriedade:", error);
     }
   };
 
@@ -216,6 +260,38 @@ const MapScreen = () => {
         ...doc.data(),
       }));
       setMaps(mapsData);
+    } catch (error) {
+      Alert.alert("Erro", error.message);
+    }
+  };
+
+  // Função para deletar o mapa
+  const handleDeleteMap = async () => {
+    if (!selectedProperty) {
+      Alert.alert("Erro", "Selecione uma propriedade primeiro");
+      return;
+    }
+    if (!selectedMap) {
+      Alert.alert("Erro", "Selecione um mapa para deletar");
+      return;
+    }
+    try {
+      // Cria a referência do documento do mapa na subcoleção "Mapas"
+      const mapRef = doc(
+        db,
+        `Propriedades/${selectedProperty.id}/Mapas`,
+        selectedMap.id
+      );
+      // Deleta o documento do mapa
+      await deleteDoc(mapRef);
+      Alert.alert("Sucesso", "Mapa deletado com sucesso!");
+
+      // Atualiza os estados se necessário, por exemplo, removendo o mapa da lista:
+      setMaps((prevMaps) =>
+        prevMaps.filter((map) => map.id !== selectedMap.id)
+      );
+      // Se desejar, limpe o estado do mapa selecionado:
+      setSelectedMap(null);
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
@@ -370,29 +446,48 @@ const MapScreen = () => {
         title="Suas Propriedades"
         data={properties}
         renderItem={(property) => (
-          <TouchableOpacity
-            key={property.id}
-            style={styles.listItem}
-            onPress={() => handleSelectProperty(property)}
-          >
-            <Text style={styles.listItemText}>{property.nome}</Text>
-          </TouchableOpacity>
+          <View key={property.id} style={styles.itemContainer}>
+            <TouchableOpacity
+              style={styles.itemInfo}
+              onPress={() => handleSelectProperty(property)}
+            >
+              <Text style={styles.listItemText}>{property.nome}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDeleteProperty(property.id)}
+            >
+              <FontAwesome5 name="times" size={20} color="red" />
+            </TouchableOpacity>
+          </View>
         )}
         onClose={() => setShowPropertiesList(false)}
       />
+
       <ListModal
         visible={showMapsList}
         title="Mapas da Propriedade"
         data={maps}
         renderItem={(map) => (
-          <TouchableOpacity
-            key={map.id}
-            style={styles.listItem}
-            onPress={() => handleSelectMap(map)}
-          >
-            <Text style={styles.listItemText}>{map.tipo}</Text>
-            <Text style={styles.listItemDescription}>{map.descricao}</Text>
-          </TouchableOpacity>
+          <View key={map.id} style={styles.itemContainer}>
+            <TouchableOpacity
+              style={styles.itemInfo}
+              onPress={() => handleSelectMap(map)}
+            >
+              <Text style={styles.listItemText}>{map.tipo}</Text>
+              <Text style={styles.listItemDescription}>{map.descricao}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => {
+                // Defina o mapa selecionado e chame a função de exclusão
+                setSelectedMap(map);
+                handleDeleteMap();
+              }}
+            >
+              <FontAwesome5 name="times" size={20} color="red" />
+            </TouchableOpacity>
+          </View>
         )}
         onClose={() => setShowMapsList(false)}
       />
@@ -406,6 +501,14 @@ const styles = StyleSheet.create({
   listItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: "#eee" },
   listItemText: { fontSize: 16, fontWeight: "500" },
   listItemDescription: { fontSize: 14, color: "#666", marginTop: 5 },
+  itemContainer: {
+    flexDirection: "row", // Organiza os elementos em linha
+    alignItems: "center", // Alinha verticalmente os itens no centro
+    justifyContent: "space-between", // Espaça os itens, colocando o primeiro à esquerda e o segundo à direita
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
 });
 
 export default MapScreen;
