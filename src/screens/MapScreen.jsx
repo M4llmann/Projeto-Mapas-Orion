@@ -24,6 +24,7 @@ import {
   doc,
   getDoc,
   deleteDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { db } from "../../firebase";
@@ -153,35 +154,60 @@ const MapScreen = () => {
 
   const handleDeleteProperty = async (propertyId) => {
     try {
-      // Exibe confirmação antes de deletar
       Alert.alert(
         "Confirmar exclusão",
-        "Tem certeza que deseja excluir esta propriedade?",
+        "Tem certeza que deseja excluir esta propriedade e seus mapas?",
         [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
+          { text: "Cancelar", style: "cancel" },
           {
             text: "Sim, excluir",
             onPress: async () => {
-              // Referência do documento no Firestore
               const propertyRef = doc(db, "Propriedades", propertyId);
 
-              // Deleta a propriedade
+              // 1️⃣ Deletar todos os mapas dentro da propriedade antes de deletar a propriedade
+              const mapsQuery = collection(
+                db,
+                `Propriedades/${propertyId}/Mapas`
+              );
+              const mapsSnapshot = await getDocs(mapsQuery);
+              const batch = writeBatch(db);
+
+              mapsSnapshot.forEach((mapDoc) => {
+                batch.delete(mapDoc.ref);
+              });
+
+              await batch.commit(); // Confirma a remoção dos mapas
+
+              // 2️⃣ Deletar a propriedade
               await deleteDoc(propertyRef);
 
-              // Atualiza a lista local de propriedades
-              setProperties((prevProperties) =>
-                prevProperties.filter((prop) => prop.id !== propertyId)
-              );
+              // 3️⃣ Atualizar o documento do cliente para remover a referência da propriedade deletada
+              const clienteDocRef = doc(db, "Clientes", user.uid);
+              const clienteDoc = await getDoc(clienteDocRef);
 
-              // Se a propriedade deletada for a selecionada, limpa a seleção
-              if (selectedProperty?.id === propertyId) {
-                setSelectedProperty(null);
+              if (clienteDoc.exists()) {
+                const clienteData = clienteDoc.data();
+                const propriedadesAtualizadas =
+                  clienteData?.Propriedades?.filter(
+                    (ref) => ref.id !== propertyId
+                  ) || [];
+
+                await updateDoc(clienteDocRef, {
+                  Propriedades: propriedadesAtualizadas,
+                });
               }
 
-              Alert.alert("Sucesso", "Propriedade excluída com sucesso!");
+              // Atualiza a UI
+              setProperties((prev) =>
+                prev.filter((prop) => prop.id !== propertyId)
+              );
+              if (selectedProperty?.id === propertyId)
+                setSelectedProperty(null);
+
+              Alert.alert(
+                "Sucesso",
+                "Propriedade e seus mapas foram excluídos!"
+              );
             },
             style: "destructive",
           },
@@ -266,34 +292,34 @@ const MapScreen = () => {
   };
 
   // Função para deletar o mapa
-  const handleDeleteMap = async () => {
-    if (!selectedProperty) {
-      Alert.alert("Erro", "Selecione uma propriedade primeiro");
-      return;
-    }
-    if (!selectedMap) {
-      Alert.alert("Erro", "Selecione um mapa para deletar");
-      return;
-    }
+  const handleDeleteMap = async (mapId) => {
     try {
-      // Cria a referência do documento do mapa na subcoleção "Mapas"
-      const mapRef = doc(
-        db,
-        `Propriedades/${selectedProperty.id}/Mapas`,
-        selectedMap.id
-      );
-      // Deleta o documento do mapa
-      await deleteDoc(mapRef);
-      Alert.alert("Sucesso", "Mapa deletado com sucesso!");
+      Alert.alert(
+        "Confirmar exclusão",
+        "Tem certeza que deseja excluir este mapa?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Sim, excluir",
+            onPress: async () => {
+              const mapRef = doc(
+                db,
+                `Propriedades/${selectedProperty.id}/Mapas`,
+                mapId
+              );
+              await deleteDoc(mapRef);
 
-      // Atualiza os estados se necessário, por exemplo, removendo o mapa da lista:
-      setMaps((prevMaps) =>
-        prevMaps.filter((map) => map.id !== selectedMap.id)
+              setMaps((prevMaps) => prevMaps.filter((map) => map.id !== mapId));
+
+              Alert.alert("Sucesso", "Mapa deletado com sucesso!");
+            },
+            style: "destructive",
+          },
+        ]
       );
-      // Se desejar, limpe o estado do mapa selecionado:
-      setSelectedMap(null);
     } catch (error) {
-      Alert.alert("Erro", error.message);
+      Alert.alert("Erro", "Não foi possível excluir o mapa");
+      console.error("Erro ao deletar mapa:", error);
     }
   };
 
@@ -479,11 +505,7 @@ const MapScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => {
-                // Defina o mapa selecionado e chame a função de exclusão
-                setSelectedMap(map);
-                handleDeleteMap();
-              }}
+              onPress={() => handleDeleteMap(map.id)}
             >
               <FontAwesome5 name="times" size={20} color="red" />
             </TouchableOpacity>
