@@ -74,7 +74,6 @@ const InfoScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Clientes</Text>
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}

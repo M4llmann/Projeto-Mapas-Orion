@@ -107,6 +107,7 @@ const MapScreen = () => {
 
   // Handle do toque no mapa
   const handleMapPress = (e) => {
+    console.log("CLICADO");
     const { latitude, longitude } = e.nativeEvent.coordinate;
     if (isAddingProperty) {
       setSelectedCoordinate({ latitude, longitude });
@@ -349,9 +350,10 @@ const MapScreen = () => {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        mapType="satellite"
+        mapType="hybrid"
         style={styles.map}
         region={region}
+        onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
         onPress={handleMapPress}
       >
         {selectedCoordinate && (

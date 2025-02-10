@@ -8,6 +8,7 @@ import MapScreen from "./src/screens/MapScreen";
 import InfoScreen from "./src/screens/InfoScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
+import { Ionicons } from "@expo/vector-icons";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,7 +26,25 @@ export default function App() {
 
   // Navegação para a tela de Map e Info (Tab Navigator)
   const TabNavigator = () => (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === "Mapa") {
+            iconName = focused ? "map" : "map-outline";
+          } else if (route.name === "Info") {
+            iconName = focused
+              ? "information-circle"
+              : "information-circle-outline";
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: "#007AFF", // Cor do ícone quando selecionado
+        tabBarInactiveTintColor: "gray", // Cor do ícone quando não selecionado
+      })}
+    >
       <Tab.Screen name="Mapa" component={MapScreen} />
       <Tab.Screen name="Info" component={InfoScreen} />
     </Tab.Navigator>
@@ -53,7 +72,7 @@ export default function App() {
   );
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key={isAuthenticated ? "user" : "guest"}>
       {isAuthenticated ? <TabNavigator /> : <AuthStack />}
     </NavigationContainer>
   );

@@ -25,7 +25,12 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigation.navigate("Telas");
+
+      // Resetar a navegação para garantir que não seja possível voltar para a tela anterior
+      navigation.reset({
+        index: 0, // Indica o índice da tela inicial
+        routes: [{ name: "Telas" }], // Aqui você pode colocar a tela que deseja exibir
+      });
     } catch (error) {
       Alert.alert("Erro", error.message);
     }
