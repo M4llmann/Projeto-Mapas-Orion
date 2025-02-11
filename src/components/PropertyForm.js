@@ -14,6 +14,7 @@ const PropertyForm = ({ propertyName, onChangeName, onSave, onCancel }) => {
       <TextInput
         style={styles.input}
         placeholder="Nome da Propriedade"
+        placeholderTextColor="#bbb"
         value={propertyName}
         onChangeText={onChangeName}
       />
@@ -36,34 +37,48 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.9)", // Fundo transparente com leve opacidade
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   input: {
+    height: 45, // Menor altura para o input
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: "white",
+    borderColor: "#aaa",
+    paddingLeft: 15,
+    fontSize: 14, // Menor tamanho de texto
+    marginBottom: 1,
+    backgroundColor: "#f7f7f7", // Fundo suave para o input
+    color: "#333",
+    fontFamily: "Roboto",
+    fontWeight: "400",
   },
   button: {
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 5,
+    backgroundColor: "#3C4A62", // Cor mais sóbria e elegante para o botão
+    padding: 10, // Menor padding
+    borderRadius: 20,
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 12, // Ajustando a margem
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   cancelButton: {
-    backgroundColor: "#FF3B30",
-    marginTop: 10,
+    backgroundColor: "#FF4C4C", // Cor de cancelamento em vermelho suave
+    marginTop: 8, // Ajustando a margem
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14, // Tamanho de texto um pouco menor
     fontWeight: "500",
+    letterSpacing: 0.8,
   },
 });
 

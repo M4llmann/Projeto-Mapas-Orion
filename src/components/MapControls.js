@@ -1,22 +1,30 @@
 // src/components/MapControls.js
 import React from "react";
-import { TouchableOpacity, StyleSheet } from "react-native";
+import { TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { FontAwesome5 } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window"); // Para obter a largura e altura da tela
 
 const MapControls = ({ onPropertyPress, onMapPress, onLogoutPress }) => {
   return (
     <>
-      <TouchableOpacity style={styles.icon} onPress={onPropertyPress}>
-        <FontAwesome5 name="home" size={24} color="white" />
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.icon, { top: 80 }]} onPress={onMapPress}>
-        <FontAwesome5 name="map" size={24} color="white" />
+      <TouchableOpacity
+        style={[styles.icon, { left: width * 0.05 }]}
+        onPress={onPropertyPress}
+      >
+        <FontAwesome5 name="home" size={24} color="gray" />
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.icon, { top: 140 }]}
+        style={[styles.icon, { left: width * 0.2 }]}
+        onPress={onMapPress}
+      >
+        <FontAwesome5 name="map" size={24} color="gray" />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.icon, { left: width * 0.85 }]}
         onPress={onLogoutPress}
       >
-        <FontAwesome5 name="sign-out-alt" size={24} color="white" />
+        <FontAwesome5 name="sign-out-alt" size={24} color="gray" />
       </TouchableOpacity>
     </>
   );
@@ -25,9 +33,8 @@ const MapControls = ({ onPropertyPress, onMapPress, onLogoutPress }) => {
 const styles = StyleSheet.create({
   icon: {
     position: "absolute",
-    top: 20,
-    right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    top: height * 0.02, // Ajuste para a altura da tela
+    backgroundColor: "rgb(255, 255, 255)",
     padding: 10,
     borderRadius: 30,
     zIndex: 1,

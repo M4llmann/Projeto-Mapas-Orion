@@ -1,4 +1,4 @@
-//npm start -- --reset-cache
+// npm start -- --reset-cache
 
 // src/screens/MapScreen.js
 import React, { useEffect, useState, useRef } from "react";
@@ -31,9 +31,11 @@ import { db } from "../../firebase";
 import MapControls from "../components/MapControls";
 import PropertyOptions from "../components/PropertyOptions";
 import MapOptions from "../components/MapOptions";
-import ListModal from "../components/ListModal";
+// Removemos a importação do ListModal, pois agora usaremos o PropertyListModal
+// import ListModal from "../components/ListModal";
 import PropertyForm from "../components/PropertyForm";
 import MapDrawingForm from "../components/MapDrawingForm";
+import PropertyListModal from "../components/PropertyListModal";
 
 const MapScreen = () => {
   const auth = getAuth();
@@ -116,7 +118,7 @@ const MapScreen = () => {
     }
   };
 
-  // Função para adicionar propriedade (mesmo que antes)
+  // Função para adicionar propriedade
   const handleAddProperty = async () => {
     if (!selectedCoordinate || !propertyName.trim()) {
       Alert.alert(
@@ -469,52 +471,55 @@ const MapScreen = () => {
       )}
 
       {/* Modais */}
-      <ListModal
+      {/* Modal de propriedades atualizado para usar o PropertyListModal */}
+      <PropertyListModal
         visible={showPropertiesList}
-        title="Suas Propriedades"
-        data={properties}
-        renderItem={(property) => (
-          <View key={property.id} style={styles.itemContainer}>
-            <TouchableOpacity
-              style={styles.itemInfo}
-              onPress={() => handleSelectProperty(property)}
-            >
-              <Text style={styles.listItemText}>{property.nome}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDeleteProperty(property.id)}
-            >
-              <FontAwesome5 name="times" size={20} color="red" />
-            </TouchableOpacity>
-          </View>
-        )}
         onClose={() => setShowPropertiesList(false)}
+        properties={properties}
+        onSelectProperty={handleSelectProperty}
+        onDeleteProperty={handleDeleteProperty}
       />
 
-      <ListModal
+      {/* Modal para exibir os mapas da propriedade (permanece utilizando o ListModal ou outro componente semelhante) */}
+      <Modal
         visible={showMapsList}
-        title="Mapas da Propriedade"
-        data={maps}
-        renderItem={(map) => (
-          <View key={map.id} style={styles.itemContainer}>
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMapsList(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.title}>Mapas da Propriedade</Text>
+            <ScrollView style={styles.scrollContainer}>
+              {maps.map((map) => (
+                <View key={map.id} style={styles.itemContainer}>
+                  <TouchableOpacity
+                    style={styles.itemInfo}
+                    onPress={() => handleSelectMap(map)}
+                  >
+                    <Text style={styles.listItemText}>{map.tipo}</Text>
+                    <Text style={styles.listItemDescription}>
+                      {map.descricao}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteMap(map.id)}
+                  >
+                    <FontAwesome5 name="times" size={20} color="red" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
             <TouchableOpacity
-              style={styles.itemInfo}
-              onPress={() => handleSelectMap(map)}
+              style={styles.closeButton}
+              onPress={() => setShowMapsList(false)}
             >
-              <Text style={styles.listItemText}>{map.tipo}</Text>
-              <Text style={styles.listItemDescription}>{map.descricao}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDeleteMap(map.id)}
-            >
-              <FontAwesome5 name="times" size={20} color="red" />
+              <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>
-        )}
-        onClose={() => setShowMapsList(false)}
-      />
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -532,6 +537,48 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  scrollContainer: {
+    maxHeight: 300,
+  },
+  deleteButton: {
+    paddingLeft: 10,
+  },
+  closeButton: {
+    marginTop: 15,
+    backgroundColor: "#3C4A62",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 

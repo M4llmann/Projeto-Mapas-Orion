@@ -18,16 +18,16 @@ const PropertyOptions = ({ onCadastrar, onSelecionar }) => {
 const styles = StyleSheet.create({
   optionsContainer: {
     position: "absolute",
-    right: 70,
-    top: 40,
+    left: "5%",
+    top: "10%",
     backgroundColor: "white",
-    padding: 10,
+    padding: 5,
     borderRadius: 5,
     elevation: 5,
     zIndex: 20,
   },
   option: {
-    padding: 10,
+    padding: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
