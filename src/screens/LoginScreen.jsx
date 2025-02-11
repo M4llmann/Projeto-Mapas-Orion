@@ -3,19 +3,21 @@ import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   Alert,
   StyleSheet,
-  TouchableOpacity,
   Image,
+  Dimensions,
 } from "react-native";
 import {
-  getAuth,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-} from "firebase/auth"; // Importe sendPasswordResetEmail
+} from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
-import { auth } from "../../firebase"; // Supondo que você já tenha configurado o Firebase corretamente
+import { auth } from "../../firebase";
+import StarryBackground from "../components/StarryBackground"; // Ajuste o caminho conforme sua estrutura
+
+const { height } = Dimensions.get("window");
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -25,11 +27,9 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-
-      // Resetar a navegação para garantir que não seja possível voltar para a tela anterior
       navigation.reset({
-        index: 0, // Indica o índice da tela inicial
-        routes: [{ name: "Telas" }], // Aqui você pode colocar a tela que deseja exibir
+        index: 0,
+        routes: [{ name: "Telas" }],
       });
     } catch (error) {
       Alert.alert("Erro", error.message);
@@ -41,48 +41,49 @@ const LoginScreen = () => {
       Alert.alert("Erro", "Por favor, insira seu email.");
       return;
     }
-
-    // Usando a função correta de sendPasswordResetEmail
     sendPasswordResetEmail(auth, email)
       .then(() => {
-        alert("Email enviado com sucesso!");
+        Alert.alert("Sucesso", "Email de recuperação enviado!");
       })
       .catch((error) => {
-        alert("Erro ao enviar email: " + error.message);
+        Alert.alert(
+          "Erro",
+          "Não foi possível enviar o email: " + error.message
+        );
       });
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require("../../assets/logo.png")} style={styles.logo} />
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <View style={styles.buttonContainer}>
-        <Button title="Entrar" onPress={handleLogin} />
+      <StarryBackground />
+      <View style={styles.logoContainer}>
+        <Image source={require("../../assets/logo.png")} style={styles.logo} />
       </View>
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Cadastre-se aqui."
-          onPress={() => navigation.navigate("Register")}
-          color="#ADc8E6"
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#888"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
         />
-      </View>
-
-      <View style={{ flex: 1 }}>
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          placeholderTextColor="#888"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Entrar</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.registerLink}>Recuperar Senha</Text>
+          <Text style={styles.registerLink}>Cadastre-se aqui</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={recoverPassword}>
+          <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -93,39 +94,67 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#f9f9f1",
-    marginTop: "40%",
+    alignItems: "center",
+  },
+  logoContainer: {
+    height: height * 0.3,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 100,
+    zIndex: 1, // Garante que fique acima do fundo
   },
   logo: {
     width: 300,
     height: 300,
     resizeMode: "contain",
-    alignSelf: "center",
-    marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    textAlign: "center",
-    fontWeight: "bold",
+  formContainer: {
+    marginTop: 20,
+    width: "90%",
+    alignItems: "center",
+    paddingBottom: 20,
+    zIndex: 1, // Garante que fique acima do fundo
+    position: "absolute",
+    bottom: 30, // Move mais para baixo
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
+    width: "100%",
+    height: 45,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 20,
-    padding: 8,
-    borderRadius: 5,
+    borderColor: "#aaa",
+    paddingHorizontal: 15,
+    marginBottom: 10,
+    backgroundColor: "rgba(247, 247, 247, 0.9)",
+    color: "#333",
   },
-  buttonContainer: {
-    marginTop: 10,
+  button: {
+    backgroundColor: "#3C4A62",
+    paddingVertical: 12,
+    borderRadius: 20,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
+    letterSpacing: 0.8,
   },
   registerLink: {
-    color: "blue",
-    marginTop: 16,
-    textAlign: "center", // Alinhando o texto à esquerda
+    color: "#FFFFFF",
+    marginTop: 10,
     textDecorationLine: "underline",
+    fontSize: 16,
+  },
+  forgotPassword: {
+    color: "#FF6B6B",
+    marginTop: 10,
     fontSize: 16,
   },
 });

@@ -4,16 +4,14 @@ import {
   View,
   Text,
   TextInput,
-  Button,
-  StyleSheet,
+  TouchableOpacity,
   Alert,
   ScrollView,
-  TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase"; // Certifique-se que o Firebase foi configurado
+import { auth, db } from "../../firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "../../firebase";
 import axios from "axios";
 
 export default function RegisterScreen({ navigation }) {
@@ -22,11 +20,7 @@ export default function RegisterScreen({ navigation }) {
   const [senha, setSenha] = useState("");
   const [cpf, setCpf] = useState("");
   const [telefone, setTelefone] = useState("");
-
-  // Estado para CEP
   const [cep, setCep] = useState("");
-
-  // Estado para endereço
   const [endereco, setEndereco] = useState({
     rua: "",
     numero: "",
@@ -35,7 +29,6 @@ export default function RegisterScreen({ navigation }) {
     pais: "",
   });
 
-  // Função para cadastrar o usuário e armazenar os dados no Firestore
   const handleCadastro = async () => {
     if (
       !nome ||
@@ -49,38 +42,30 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert("Erro", "Preencha todos os campos obrigatórios.");
       return;
     }
-
     try {
-      // Criar usuário com email e senha
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         senha
       );
       const user = userCredential.user;
-
-      // Armazenar dados no Firestore
-      const clienteRef = doc(db, "Clientes", user.uid);
-      await setDoc(clienteRef, {
+      await setDoc(doc(db, "Clientes", user.uid), {
         id: user.uid,
         nome,
         email: user.email,
         telefone,
         documento: { cpf },
         endereco,
-        Propriedades: [], // Inicializa como array vazio
+        Propriedades: [],
       });
-
       Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      navigation.navigate("Login"); // Redireciona para a tela de Login (ou outra)
+      navigation.navigate("Login");
     } catch (error) {
       Alert.alert("Erro", `Erro ao cadastrar: ${error.message}`);
     }
   };
 
-  // Função para buscar endereço via CEP usando a API do ViaCEP
   const buscarEnderecoPorCEP = async (cepDigitado) => {
-    // Remove caracteres não numéricos
     const cepLimpo = cepDigitado.replace(/\D/g, "");
     if (cepLimpo.length === 8) {
       try {
@@ -88,18 +73,17 @@ export default function RegisterScreen({ navigation }) {
           `https://viacep.com.br/ws/${cepLimpo}/json/`
         );
         if (!response.data.erro) {
-          // Atualiza os campos do endereço com os dados retornados
-          setEndereco((prevEndereco) => ({
-            ...prevEndereco,
+          setEndereco({
+            ...endereco,
             rua: response.data.logradouro || "",
             cidade: response.data.localidade || "",
             estado: response.data.uf || "",
-            pais: "Brasil", // Define um valor padrão para o país
-          }));
+            pais: "Brasil",
+          });
         } else {
           Alert.alert("Erro", "CEP não encontrado");
         }
-      } catch (error) {
+      } catch {
         Alert.alert("Erro", "Não foi possível buscar o endereço");
       }
     } else {
@@ -110,149 +94,162 @@ export default function RegisterScreen({ navigation }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Complete seu Cadastro</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Nome completo"
-        value={nome}
-        onChangeText={setNome}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        secureTextEntry
-        value={senha}
-        onChangeText={setSenha}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Telefone"
-        value={telefone}
-        onChangeText={setTelefone}
-        keyboardType="numeric"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="CPF"
-        value={cpf}
-        onChangeText={setCpf}
-        keyboardType="numeric"
-      />
-
+      {[
+        { label: "Nome completo", value: nome, onChange: setNome },
+        {
+          label: "Email",
+          value: email,
+          onChange: setEmail,
+          keyboardType: "email-address",
+        },
+        {
+          label: "Senha",
+          value: senha,
+          onChange: setSenha,
+          secureTextEntry: true,
+        },
+        {
+          label: "Telefone",
+          value: telefone,
+          onChange: setTelefone,
+          keyboardType: "numeric",
+        },
+        { label: "CPF", value: cpf, onChange: setCpf, keyboardType: "numeric" },
+      ].map(({ label, ...props }, index) => (
+        <TextInput
+          key={index}
+          style={styles.input}
+          placeholder={label}
+          placeholderTextColor="#bbb"
+          {...props}
+        />
+      ))}
       <Text style={styles.sectionTitle}>Endereço</Text>
       <View style={styles.cepContainer}>
         <TextInput
           style={styles.cepInput}
           placeholder="CEP"
+          placeholderTextColor="#bbb"
           value={cep}
           onChangeText={setCep}
           keyboardType="numeric"
-          maxLength={9} // Ex: 12345-678
+          maxLength={9}
         />
-
         <TouchableOpacity
-          style={styles.buscarCepButton}
+          style={styles.cepButton} // Alterei o nome do estilo para evitar conflito
           onPress={() => buscarEnderecoPorCEP(cep)}
         >
-          <Text style={styles.buscarCepText}>Buscar CEP</Text>
+          <Text style={styles.buttonText}>Buscar CEP</Text>
         </TouchableOpacity>
       </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Rua"
-        value={endereco.rua}
-        onChangeText={(text) => setEndereco({ ...endereco, rua: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Número"
-        value={endereco.numero}
-        onChangeText={(text) => setEndereco({ ...endereco, numero: text })}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Cidade"
-        value={endereco.cidade}
-        onChangeText={(text) => setEndereco({ ...endereco, cidade: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Estado"
-        value={endereco.estado}
-        onChangeText={(text) => setEndereco({ ...endereco, estado: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="País"
-        value={endereco.pais}
-        onChangeText={(text) => setEndereco({ ...endereco, pais: text })}
-      />
 
-      <Button title="Salvar" onPress={handleCadastro} />
+      {[
+        {
+          label: "Rua",
+          value: endereco.rua,
+          onChange: (text) => setEndereco({ ...endereco, rua: text }),
+        },
+        {
+          label: "Número",
+          value: endereco.numero,
+          onChange: (text) => setEndereco({ ...endereco, numero: text }),
+          keyboardType: "numeric",
+        },
+        {
+          label: "Cidade",
+          value: endereco.cidade,
+          onChange: (text) => setEndereco({ ...endereco, cidade: text }),
+        },
+        {
+          label: "Estado",
+          value: endereco.estado,
+          onChange: (text) => setEndereco({ ...endereco, estado: text }),
+        },
+        {
+          label: "País",
+          value: endereco.pais,
+          onChange: (text) => setEndereco({ ...endereco, pais: text }),
+        },
+      ].map(({ label, ...props }, index) => (
+        <TextInput
+          key={index}
+          style={styles.input}
+          placeholder={label}
+          placeholderTextColor="#bbb"
+          {...props}
+        />
+      ))}
+      <TouchableOpacity style={styles.button} onPress={handleCadastro}>
+        <Text style={styles.buttonText}>Salvar</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 30,
     flexGrow: 1,
     padding: 20,
     backgroundColor: "#f9f9f9",
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "600",
     textAlign: "center",
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    borderRadius: 5,
+    marginTop: 20,
     marginBottom: 10,
-    backgroundColor: "#fff",
+    color: "#333",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     marginTop: 20,
     marginBottom: 10,
+    color: "#333",
+  },
+  input: {
+    height: 45,
+    borderWidth: 1,
+    borderColor: "#aaa",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f7f7f7",
+    marginBottom: 10,
+    color: "#333",
   },
   cepContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between", // Mantém espaço entre os elementos
     marginBottom: 10,
+
+    width: "100%", // Garante que a View ocupa toda a largura
   },
+  cepButton: {
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: "#3C4A62",
+    justifyContent: "center",
+    marginLeft: 10, // Adiciona um espaçamento entre o input e o botão
+  },
+
   cepInput: {
     flex: 1,
+    height: 45,
     borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: "#fff",
-    marginRight: 10,
+    borderColor: "#aaa",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f7f7f7",
+    color: "#333",
   },
-  buscarCepButton: {
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 5,
+  button: {
+    backgroundColor: "#3C4A62",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 15,
   },
-  buscarCepText: {
-    color: "white",
-    fontWeight: "bold",
-  },
+  buttonText: { color: "white", fontSize: 14, fontWeight: "500" },
 });
