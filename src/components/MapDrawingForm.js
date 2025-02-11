@@ -18,15 +18,18 @@ const MapDrawingForm = ({
 }) => {
   return (
     <View style={styles.inputContainer}>
+      <Text style={styles.title}>Adicionar Novo Mapa</Text>
       <TextInput
         style={styles.input}
         placeholder="Tipo do Mapa"
+        placeholderTextColor="#bbb"
         value={mapType}
         onChangeText={onChangeType}
       />
       <TextInput
         style={styles.input}
         placeholder="Descrição do Mapa"
+        placeholderTextColor="#bbb"
         value={mapDescription}
         onChangeText={onChangeDescription}
       />
@@ -49,34 +52,57 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#333",
+    fontFamily: "Roboto",
+    letterSpacing: 0.8,
   },
   input: {
+    height: 45,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: "white",
+    borderColor: "#aaa",
+    paddingLeft: 15,
+    fontSize: 14,
+    marginBottom: 12,
+    backgroundColor: "#f7f7f7",
+    color: "#333",
+    fontFamily: "Roboto",
+    fontWeight: "400",
   },
   button: {
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 5,
+    backgroundColor: "#3C4A62",
+    padding: 10,
+    borderRadius: 20,
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   cancelButton: {
-    backgroundColor: "#FF3B30",
-    marginTop: 10,
+    backgroundColor: "#FF4C4C",
+    marginTop: 8,
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
+    letterSpacing: 0.8,
   },
 });
 
