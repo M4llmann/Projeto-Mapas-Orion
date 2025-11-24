@@ -27,10 +27,7 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Telas" }],
-      });
+      navigation.navigate("Telas");
     } catch (error) {
       Alert.alert("Erro", error.message);
     }

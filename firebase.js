@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth"; // Para autenticação
 import { getFirestore } from "firebase/firestore"; // Para Firestore
 import { getStorage } from "firebase/storage"; // Para Storage
@@ -11,11 +11,11 @@ const firebaseConfig = {
   storageBucket: "orion-geo-hml.appspot.com",
   messagingSenderId: "926755195982",
   appId: "1:926755195982:web:040b5ce826935912e1871f",
-  measurementId: "G-CS2XY03PX4"
+  measurementId: "G-CS2XY03PX4",
 };
 
 // Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 // Inicializa os serviços que você deseja usar
 const auth = getAuth(app); // Autenticação

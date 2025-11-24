@@ -27,12 +27,11 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { db } from "../../firebase";
 import MapControls from "../components/MapControls";
 import PropertyOptions from "../components/PropertyOptions";
 import MapOptions from "../components/MapOptions";
-// Removemos a importação do ListModal, pois agora usaremos o PropertyListModal
-// import ListModal from "../components/ListModal";
 import PropertyForm from "../components/PropertyForm";
 import MapDrawingForm from "../components/MapDrawingForm";
 import PropertyListModal from "../components/PropertyListModal";
@@ -49,7 +48,7 @@ const MapScreen = () => {
     longitudeDelta: 50,
   });
   const [user, setUser] = useState(null);
-
+  const [mapKey, setMapKey] = useState(Date.now());
   // Estados para propriedades
   const [properties, setProperties] = useState([]);
   const [selectedCoordinate, setSelectedCoordinate] = useState(null);
@@ -83,6 +82,51 @@ const MapScreen = () => {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setRegion({
+        latitude: -24.56387409974605,
+        longitude: -54.06450295277613,
+        latitudeDelta: 50,
+        longitudeDelta: 50,
+      });
+    }
+  }, [user]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Reseta estados relevantes
+      setUser(null);
+      setRegion({
+        latitude: -24.56387409974605,
+        longitude: -54.06450295277613,
+        latitudeDelta: 50,
+        longitudeDelta: 50,
+      });
+      setProperties([]);
+      setSelectedProperty(null);
+      setSelectedMap(null);
+      setMapPoints([]);
+      setIsDrawing(false);
+      setIsAddingProperty(false);
+      setShowMapOptions(false);
+      setShowPropertyOptions(false);
+      setShowPropertiesList(false);
+      setShowMapsList(false);
+      // Força a desmontagem do MapView
+      setMapKey(Date.now());
+      // Reseta a navegação para a tela de login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+      Alert.alert("Logout", "Você saiu com sucesso.");
+    } catch (error) {
+      Alert.alert("Erro", error.message);
+    }
+  };
 
   // Função para buscar propriedades
   const fetchUserProperties = async (userId) => {
@@ -352,6 +396,7 @@ const MapScreen = () => {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
+        key={mapKey}
         mapType="hybrid"
         style={styles.map}
         region={region}
@@ -403,7 +448,7 @@ const MapScreen = () => {
       <MapControls
         onPropertyPress={() => setShowPropertyOptions(!showPropertyOptions)}
         onMapPress={() => setShowMapOptions(!showMapOptions)}
-        onLogoutPress={() => signOut(auth)}
+        onLogoutPress={handleLogout}
       />
 
       {/* Menus de Opções */}
