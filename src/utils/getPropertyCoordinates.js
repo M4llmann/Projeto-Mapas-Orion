@@ -1,5 +1,5 @@
 import { collection, getDocs, getDoc } from "firebase/firestore";
-import { db } from "../firebase"; // Certifique-se de importar sua instância do Firestore corretamente
+import { db } from "../../firebase"; // Certifique-se de importar sua instância do Firestore corretamente
 
 export const getPropertyCoordinates = async (user) => {
   try {

@@ -38,6 +38,7 @@ import PropertyListModal from "../components/PropertyListModal";
 
 const MapScreen = () => {
   const auth = getAuth();
+  const navigation = useNavigation();
   const mapRef = useRef(null);
 
   // Estados do mapa e usuário

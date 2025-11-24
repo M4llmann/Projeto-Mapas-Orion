@@ -11,7 +11,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../../firebase";
 
 export const useProperties = () => {
   const auth = getAuth();
@@ -108,7 +108,7 @@ import { useState, useCallback } from "react";
 import { Alert } from "react-native";
 import { getAuth } from "firebase/auth";
 import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../../firebase";
 
 export const useMapDrawing = (selectedProperty) => {
   const auth = getAuth();
