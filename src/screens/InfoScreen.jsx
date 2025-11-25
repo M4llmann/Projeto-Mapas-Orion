@@ -27,6 +27,7 @@ const InfoScreen = () => {
       if (user) {
         loadData();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
   );
 

@@ -1,17 +1,19 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, Animated, Dimensions, StyleSheet } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
 const StarryBackground = () => {
-  // Criar array de estrelas com posições aleatórias
-  const stars = Array.from({ length: 100 }, () => ({
-    left: Math.random() * width,
-    top: Math.random() * height,
-    size: Math.random() * 2 + 1,
-    animationDuration: Math.random() * 2000 + 1000,
-    opacity: new Animated.Value(Math.random()),
-  }));
+  // Criar array de estrelas com posições aleatórias usando useMemo
+  const stars = useMemo(() => {
+    return Array.from({ length: 100 }, () => ({
+      left: Math.random() * width,
+      top: Math.random() * height,
+      size: Math.random() * 2 + 1,
+      animationDuration: Math.random() * 2000 + 1000,
+      opacity: new Animated.Value(Math.random()),
+    }));
+  }, []);
 
   useEffect(() => {
     // Animar cada estrela
@@ -31,7 +33,7 @@ const StarryBackground = () => {
         ])
       ).start();
     });
-  }, []);
+  }, [stars]);
 
   return (
     <View style={styles.container}>

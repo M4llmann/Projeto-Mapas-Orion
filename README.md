@@ -27,14 +27,15 @@ Aplicação mobile desenvolvida com React Native e Expo para gerenciamento de pr
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **React Native** (^0.76.6) - Framework para desenvolvimento mobile
-- **Expo** (~52.0.26) - Plataforma e ferramentas para React Native
+- **React Native** (0.81.5) - Framework para desenvolvimento mobile
+- **Expo** (~54.0.0) - Plataforma e ferramentas para React Native (SDK 54)
+- **React** (19.1.0) - Biblioteca JavaScript para interfaces de usuário
 - **Firebase** (^11.1.0) - Backend como serviço (Auth, Firestore, Storage)
 - **React Navigation** (^7.x) - Navegação entre telas
-- **React Native Maps** (1.18.0) - Componentes de mapas
+- **React Native Maps** (1.20.1) - Componentes de mapas
 - **NativeWind** (^4.1.23) - Tailwind CSS para React Native
 - **Axios** (^1.7.9) - Cliente HTTP para requisições
-- **Expo Location** (~18.0.5) - Acesso à localização do dispositivo
+- **Expo Location** (~19.0.7) - Acesso à localização do dispositivo
 
 ## 📦 Pré-requisitos
 
@@ -71,7 +72,7 @@ cd Projeto-Mapas-Orion
 ### 2. Instale as dependências
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 ou
@@ -79,6 +80,8 @@ ou
 ```bash
 yarn install
 ```
+
+**Nota**: O projeto utiliza Expo SDK 54 com React 19, que pode ter conflitos de peer dependencies. Use `--legacy-peer-deps` se encontrar problemas durante a instalação.
 
 ### 3. Instale o Expo Go no seu dispositivo
 
@@ -100,19 +103,25 @@ yarn install
    - Vá em **Configurações do Projeto** > **Configurações do app**
    - Copie as credenciais do Firebase
 
-5. Edite o arquivo `firebase.js` e substitua as configurações:
+5. Configure as variáveis de ambiente:
 
-```javascript
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJECT_ID.firebaseapp.com",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_PROJECT_ID.appspot.com",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID",
-  measurementId: "SEU_MEASUREMENT_ID"
-};
-```
+   - Copie o arquivo `.env.example` para `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+   - Edite o arquivo `.env` e preencha com suas credenciais do Firebase:
+   ```env
+   EXPO_PUBLIC_FIREBASE_API_KEY=sua_api_key_aqui
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=seu_project_id.firebaseapp.com
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=seu_project_id
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=seu_project_id.appspot.com
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu_messaging_sender_id
+   EXPO_PUBLIC_FIREBASE_APP_ID=seu_app_id
+   EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=seu_measurement_id
+   ```
+
+   **⚠️ IMPORTANTE**: O arquivo `.env` não será commitado no Git. Nunca compartilhe suas credenciais!
 
 ### Configuração do Firestore
 
@@ -283,8 +292,10 @@ npm cache clean --force
 
 # Delete node_modules e reinstale
 rm -rf node_modules
-npm install
+npm install --legacy-peer-deps
 ```
+
+**Nota**: O projeto utiliza Expo SDK 54 com React 19, que pode ter conflitos de peer dependencies. Sempre use `--legacy-peer-deps` ao instalar dependências.
 
 #### 2. Erro de conexão com Firebase
 

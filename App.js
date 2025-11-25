@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import MapScreen from "./src/screens/MapScreen";
@@ -9,6 +10,7 @@ import InfoScreen from "./src/screens/InfoScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import { Ionicons } from "@expo/vector-icons";
+import ErrorBoundary from "./ErrorBoundary";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -72,8 +74,12 @@ export default function App() {
   );
 
   return (
-    <NavigationContainer key={isAuthenticated ? "user" : "guest"}>
-      {isAuthenticated ? <TabNavigator /> : <AuthStack />}
-    </NavigationContainer>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <NavigationContainer key={isAuthenticated ? "user" : "guest"}>
+          {isAuthenticated ? <TabNavigator /> : <AuthStack />}
+        </NavigationContainer>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
